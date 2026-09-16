@@ -1,0 +1,14 @@
+{
+  "name": "nodejs-devops-project",
+  "version": "1.0.0",
+  "description": "Node.js DevOps CI/CD application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "prom-client": "^15.1.3"
+  }
+}
