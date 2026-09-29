@@ -4,7 +4,9 @@ pipeline {
     environment {
         IMAGE_NAME = "jeswindcoutho/nodejs-devops-project"
         NAMESPACE = "nodejs-devops"
+        ROLLOUT_NAME = "nodejs-app-rollout"
         IMAGE_TAG = "${BUILD_NUMBER}"
+        APP_VERSION = "${BUILD_NUMBER}.0"
     }
 
     stages {
@@ -31,49 +33,46 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
+                    echo "Building Docker image..."
+                    echo "Application version: ${APP_VERSION}"
+
                     docker build \
-                        --build-arg APP_VERSION=${IMAGE_TAG}.0 \
+                        --build-arg APP_VERSION=${APP_VERSION} \
                         -t ${IMAGE_NAME}:${IMAGE_TAG} .
                 '''
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Load Image into Minikube') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )
-                ]) {
-                    sh '''
-                        echo "$DOCKER_PASS" | docker login \
-                            -u "$DOCKER_USER" \
-                            --password-stdin
+                sh '''
+                    echo "Loading image into Minikube..."
 
-                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
-                    '''
-                }
+                    minikube image load \
+                        ${IMAGE_NAME}:${IMAGE_TAG}
+                '''
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Deploy to Argo Rollout') {
             steps {
                 sh '''
                     echo "Kubernetes nodes:"
                     kubectl get nodes
 
-                    echo "Updating stable deployment..."
+                    echo "Updating Argo Rollout..."
 
-                    kubectl set image deployment/nodejs-app \
+                    kubectl argo rollouts set image \
+                        ${ROLLOUT_NAME} \
                         nodejs-app=${IMAGE_NAME}:${IMAGE_TAG} \
                         -n ${NAMESPACE}
 
-                    echo "Waiting for rolling update..."
+                    echo "Waiting for Argo Rollout..."
 
-                    kubectl rollout status deployment/nodejs-app \
-                        -n ${NAMESPACE}
+                    kubectl argo rollouts status \
+                        ${ROLLOUT_NAME} \
+                        -n ${NAMESPACE} \
+                        --timeout 5m
                 '''
             }
         }
@@ -81,28 +80,40 @@ pipeline {
         stage('Check Deployment') {
             steps {
                 sh '''
-                    echo "Deployments:"
-                    kubectl get deployments -n ${NAMESPACE}
+                    echo "================================"
+                    echo "Argo Rollout"
+                    echo "================================"
 
-                    echo "Pods:"
-                    kubectl get pods -n ${NAMESPACE}
+                    kubectl argo rollouts get rollout \
+                        ${ROLLOUT_NAME} \
+                        -n ${NAMESPACE}
 
-                    echo "Services:"
-                    kubectl get services -n ${NAMESPACE}
+                    echo "================================"
+                    echo "Pods"
+                    echo "================================"
 
-                    echo "Docker image:"
-                    kubectl get deployment nodejs-app \
+                    kubectl get pods \
+                        -n ${NAMESPACE} \
+                        -l app=nodejs-rollout
+
+                    echo "================================"
+                    echo "Services"
+                    echo "================================"
+
+                    kubectl get services \
+                        -n ${NAMESPACE}
+
+                    echo "================================"
+                    echo "Application Image"
+                    echo "================================"
+
+                    kubectl get rollout ${ROLLOUT_NAME} \
                         -n ${NAMESPACE} \
                         -o jsonpath='{.spec.template.spec.containers[0].image}'
+
                     echo
                 '''
             }
-        }
-    }
-
-    post {
-        always {
-            sh 'docker logout || true'
         }
     }
 }

@@ -1,0 +1,67 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: nodejs-app-rollout
+  namespace: nodejs-devops
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: nodejs-rollout
+
+  template:
+    metadata:
+      labels:
+        app: nodejs-rollout
+    spec:
+      containers:
+        - name: nodejs-app
+          image: jeswindcoutho/nodejs-devops-project:2
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 3000
+
+          env:
+            - name: NODE_ENV
+              value: production
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 20
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+
+  strategy:
+    canary:
+      stableService: nodejs-rollout-stable
+      canaryService: nodejs-rollout-canary
+
+      trafficRouting:
+        nginx:
+          stableIngress: nodejs-rollout-ingress
+
+      steps:
+        - setWeight: 10
+        - pause: {}
+        - setWeight: 25
+        - pause: {}
+        - setWeight: 50
+        - pause: {}
