@@ -38,15 +38,12 @@ pipeline {
             }
         }
 
-        stage('Apply Kubernetes Configuration') {
+        stage('Apply Kubernetes Services') {
             steps {
                 sh '''
                     kubectl apply -f k8s/rollout-stable-service.yaml
                     kubectl apply -f k8s/rollout-canary-service.yaml
                     kubectl apply -f k8s/rollout-ingress.yaml
-                    kubectl apply -f k8s/rollout.yaml
-                    kubectl apply -f k8s/servicemonitor.yaml
-                    kubectl apply -f k8s/analysis-template.yaml
                 '''
             }
         }
@@ -81,7 +78,17 @@ pipeline {
             }
         }
 
-        stage('Update Argo Rollout') {
+        stage('Apply Argo Rollout') {
+            steps {
+                sh '''
+                    kubectl apply -f k8s/rollout.yaml
+                    kubectl apply -f k8s/servicemonitor.yaml
+                    kubectl apply -f k8s/analysis-template.yaml
+                '''
+            }
+        }
+
+        stage('Update Argo Rollout Image') {
             steps {
                 sh '''
                     echo "Updating Argo Rollout..."
@@ -162,11 +169,11 @@ pipeline {
             Project 2 CI/CD Pipeline Successful
             ======================================
 
-            Build Number      : ${BUILD_NUMBER}
-            Application Version: ${APP_VERSION}
-            Docker Image      : ${IMAGE_NAME}:${IMAGE_TAG}
-            Argo Rollout      : ${ROLLOUT_NAME}
-            Namespace         : ${NAMESPACE}
+            Build Number       : ${BUILD_NUMBER}
+            Application Version : ${APP_VERSION}
+            Docker Image       : ${IMAGE_NAME}:${IMAGE_TAG}
+            Argo Rollout       : ${ROLLOUT_NAME}
+            Namespace          : ${NAMESPACE}
 
             Progressive delivery is controlled by
             Argo Rollouts using Prometheus analysis.

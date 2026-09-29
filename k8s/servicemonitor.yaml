@@ -8,8 +8,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: nodejs-app
-      version: stable
+      nodejs-monitor: stable
   namespaceSelector:
     matchNames:
       - nodejs-devops
@@ -17,6 +16,7 @@ spec:
     - port: http
       path: /metrics
       interval: 15s
+
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -28,8 +28,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: nodejs-app
-      version: canary
+      nodejs-monitor: canary
   namespaceSelector:
     matchNames:
       - nodejs-devops
