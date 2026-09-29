@@ -23,7 +23,7 @@ spec:
       containers:
         - name: nodejs-app
           image: jeswindcoutho/nodejs-devops-project:1.0
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           env:
