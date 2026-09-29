@@ -8,9 +8,11 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
+
+        stage('Git') {
             steps {
-                checkout scm
+                git url: 'https://github.com/JeswinDcoutho/Project2.git',
+                    branch: 'master'
             }
         }
 
@@ -28,19 +30,28 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build --build-arg APP_VERSION=${IMAGE_TAG} -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+                sh '''
+                    docker build \
+                        --build-arg APP_VERSION=${IMAGE_TAG}.0 \
+                        -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                '''
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-credentials',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
                     sh '''
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        echo "$DOCKER_PASS" | docker login \
+                            -u "$DOCKER_USER" \
+                            --password-stdin
+
                         docker push ${IMAGE_NAME}:${IMAGE_TAG}
                     '''
                 }
@@ -50,9 +61,40 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                    kubectl set image deployment/nodejs-app                     nodejs-app=${IMAGE_NAME}:${IMAGE_TAG}                     -n ${NAMESPACE}
+                    echo "Kubernetes nodes:"
+                    kubectl get nodes
 
-                    kubectl rollout status deployment/nodejs-app -n ${NAMESPACE}
+                    echo "Updating stable deployment..."
+
+                    kubectl set image deployment/nodejs-app \
+                        nodejs-app=${IMAGE_NAME}:${IMAGE_TAG} \
+                        -n ${NAMESPACE}
+
+                    echo "Waiting for rolling update..."
+
+                    kubectl rollout status deployment/nodejs-app \
+                        -n ${NAMESPACE}
+                '''
+            }
+        }
+
+        stage('Check Deployment') {
+            steps {
+                sh '''
+                    echo "Deployments:"
+                    kubectl get deployments -n ${NAMESPACE}
+
+                    echo "Pods:"
+                    kubectl get pods -n ${NAMESPACE}
+
+                    echo "Services:"
+                    kubectl get services -n ${NAMESPACE}
+
+                    echo "Docker image:"
+                    kubectl get deployment nodejs-app \
+                        -n ${NAMESPACE} \
+                        -o jsonpath='{.spec.template.spec.containers[0].image}'
+                    echo
                 '''
             }
         }

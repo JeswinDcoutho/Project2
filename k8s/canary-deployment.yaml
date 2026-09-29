@@ -17,15 +17,13 @@ spec:
     spec:
       containers:
         - name: nodejs-app
-          image: jeswindcoutho/nodejs-devops-project:2.0
-          imagePullPolicy: IfNotPresent
+          image: jeswindcoutho/nodejs-devops-project:2
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           env:
             - name: NODE_ENV
               value: production
-            - name: APP_VERSION
-              value: "2.0"
           readinessProbe:
             httpGet:
               path: /health
