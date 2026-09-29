@@ -1,4 +1,4 @@
-const express = require("express");
+kkconst express = require("express");
 const client = require("prom-client");
 
 const app = express();
@@ -24,13 +24,28 @@ register.registerMetric(httpDuration);
 
 app.use((req, res, next) => {
   const start = process.hrtime();
+
   res.on("finish", () => {
     const diff = process.hrtime(start);
     const duration = diff[0] + diff[1] / 1e9;
+
     const route = req.route?.path || req.path;
-    httpRequests.inc({ method: req.method, route, status: res.statusCode });
-    httpDuration.observe({ method: req.method, route }, duration);
+
+    httpRequests.inc({
+      method: req.method,
+      route,
+      status: res.statusCode
+    });
+
+    httpDuration.observe(
+      {
+        method: req.method,
+        route
+      },
+      duration
+    );
   });
+
   next();
 });
 
@@ -43,7 +58,10 @@ app.get("/", (req, res) => {
 });
 
 app.get("/health", (req, res) => {
-  res.status(200).json({ status: "UP", version: VERSION });
+  res.status(200).json({
+    status: "UP",
+    version: VERSION
+  });
 });
 
 app.get("/metrics", async (req, res) => {
@@ -52,5 +70,7 @@ app.get("/metrics", async (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Node.js application version ${VERSION} running on port ${PORT}`);
+  console.log(
+    `Node.js application version ${VERSION} running on port ${PORT}`
+  );
 });

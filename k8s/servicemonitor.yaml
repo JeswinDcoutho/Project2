@@ -1,0 +1,39 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nodejs-stable-monitor
+  namespace: nodejs-devops
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-app
+      version: stable
+  namespaceSelector:
+    matchNames:
+      - nodejs-devops
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nodejs-canary-monitor
+  namespace: nodejs-devops
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-app
+      version: canary
+  namespaceSelector:
+    matchNames:
+      - nodejs-devops
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

@@ -5,13 +5,15 @@ metadata:
   namespace: nodejs-devops
   labels:
     app: nodejs-app
+    version: stable
 spec:
   type: NodePort
   selector:
     app: nodejs-app
     version: stable
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 80
       targetPort: 3000
       nodePort: 30080

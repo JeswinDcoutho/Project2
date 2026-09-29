@@ -3,13 +3,17 @@ kind: Service
 metadata:
   name: nodejs-canary-service
   namespace: nodejs-devops
+  labels:
+    app: nodejs-app
+    version: canary
 spec:
   type: NodePort
   selector:
     app: nodejs-app
     version: canary
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 80
       targetPort: 3000
       nodePort: 30081
