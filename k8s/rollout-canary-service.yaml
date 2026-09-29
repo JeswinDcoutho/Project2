@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: nodejs-rollout-canary
   namespace: nodejs-devops
+  labels:
+    nodejs-monitor: canary
 spec:
   ports:
     - name: http
