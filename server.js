@@ -13,6 +13,7 @@ const httpRequests = new client.Counter({
   help: "Total HTTP requests",
   labelNames: ["method", "route", "status"]
 });
+
 register.registerMetric(httpRequests);
 
 const httpDuration = new client.Histogram({
@@ -20,6 +21,7 @@ const httpDuration = new client.Histogram({
   help: "HTTP request duration in seconds",
   labelNames: ["method", "route"]
 });
+
 register.registerMetric(httpDuration);
 
 app.use((req, res, next) => {
@@ -51,7 +53,7 @@ app.use((req, res, next) => {
 
 app.get("/", (req, res) => {
   res.json({
-    message: "Node.js DevOps CI/CD Application",
+    message: `Node.js DevOps CI/CD Application version ${VERSION}`,
     version: VERSION,
     environment: process.env.NODE_ENV || "development"
   });
