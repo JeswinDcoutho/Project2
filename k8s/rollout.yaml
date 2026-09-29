@@ -3,6 +3,7 @@ kind: Rollout
 metadata:
   name: nodejs-app-rollout
   namespace: nodejs-devops
+
 spec:
   replicas: 3
 
@@ -14,6 +15,7 @@ spec:
     metadata:
       labels:
         app: nodejs-rollout
+
     spec:
       containers:
         - name: nodejs-app
@@ -31,8 +33,10 @@ spec:
             httpGet:
               path: /health
               port: 3000
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
 
           livenessProbe:
             httpGet:
@@ -60,8 +64,16 @@ spec:
 
       steps:
         - setWeight: 10
-        - pause: {}
+        - analysis:
+            templates:
+              - templateName: nodejs-canary-analysis
+
         - setWeight: 25
-        - pause: {}
+        - analysis:
+            templates:
+              - templateName: nodejs-canary-analysis
+
         - setWeight: 50
-        - pause: {}
+        - analysis:
+            templates:
+              - templateName: nodejs-canary-analysis
